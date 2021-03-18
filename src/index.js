@@ -1,11 +1,16 @@
-const { response, request } = require('express');
-const Express = require('express');
+const express = require('express');
+const cors = require('cors');
 const {v4: uuidv4} = require("uuid");
-const app = Express();
 
-app.use(Express.json());
+const app = express();
+
+app.use(cors());
+app.use(express.json());
+
+
 
 const users = [];
+
 
 
 function checksExistsUserAccount(request,response,next){
@@ -29,7 +34,7 @@ function checksExistsTodo(request,response,next){
     const todo = user.todos.find(todo => todo.id === id);
 
     if(!todo){
-        return response.status(400).json({error: "Todo not found"});
+        return response.status(404).json({error: "Todo not found"});
     }
 
     request.todo = todo;
@@ -41,26 +46,30 @@ function checksExistsTodo(request,response,next){
 app.post('/users',(request,response) =>{
     const { name,username } = request.body;
 
-    const userFind = users.find(user => user.username === username);
+    const userExist = users.find(user => user.username === username);
 
-    if (userFind){
+    
+    if (userExist){
         return response.status(400).json({error: "The user already exists!"})
     }
 
-    users.push({ 
+    const user = {
         id: uuidv4(), 
         name, 
         username, 
         todos: []
-    });
+    }
+    
+    users.push(user);
 
-    return response.status(201).json({"message":"User created successfully"});
-})
+   
+    return response.status(201).json(user);
+});
+
 
 app.get('/users',(request,response) =>{
    return response.json(users);
-})
-
+});
 
 app.get('/todos',checksExistsUserAccount,(request, response) => {
     const { user } = request;
@@ -108,8 +117,9 @@ app.patch('/todos/:id/done', checksExistsUserAccount,checksExistsTodo,(request, 
 app.delete('/todos/:id', checksExistsUserAccount,checksExistsTodo,(request, response) => {
     const {user,todo } = request;
     user.todos.splice(todo,1);
-    return response.status(200).json(user.todos);
+    return response.status(204).json(user.todos);
 
   });
+  
 
-app.listen(3333);
+  module.exports = app;
