@@ -3,6 +3,7 @@ const cors = require('cors');
 
 const { v4: uuidv4, validate } = require('uuid');
 
+
 const app = express();
 app.use(express.json());
 app.use(cors());
@@ -10,12 +11,12 @@ app.use(cors());
 const users = [];
 
 function checksExistsUserAccount(request, response, next) {
-  const { username } = request.headers;
+  const { id } = request.headers;
 
-  const userExist = users.find((user) => user.username === username);
+  const userExist = users.find((user) => user.id === id);
 
-  if (!userExist) {
-    return response.status(404).json({ error: "User Not Found" });
+  if(!userExist){
+      return response.status(404).json({error: "User not found"});
   }
 
   request.user = userExist;
@@ -24,47 +25,41 @@ function checksExistsUserAccount(request, response, next) {
 }
 
 function checksCreateTodosUserAvailability(request, response, next) {
-  const { user } = request;
+    const { user  } = request;
 
-  const todosCount = user.todos.length;
+    const todosCount = user.todos.length;
 
-  if (user.pro === false && todosCount >= 10) {
-    return response.status(403).json({ erro: "user not pro" });
-  }
+   if(user.pro === false && todosCount >= 10 ){
+      return response.status(403).json({erro: "user not pro"});
+    }
 
-  return next();
-}
+    return next();
+};
 
 function checksTodoExists(request, response, next) {
-  const { username } = request.headers;
   const { id } = request.params;
 
-  const userExist = users.find((user) => user.username === username);
+  const userExist = users.find((user) => user.id === id);
 
-  if (!userExist) {
-    return response.status(404).json({ error: "user Not Found" });
-  };
-  const { todos } = userExist;
-  const todoExist = todos.find((todo) => todo.id === id);
+  if(!userExist){
+      return response.status(404).json({error: "User not found"});
+  }
 
-
-  if (!todoExist) {
-    return response.status(404).json({error: "Not Found"});
-  };
-  request.todo = todoExist;
+  request.user = userExist;
 
   return next();
-}
+};
+
+
 
 function findUserById(request, response, next) {
   const { id } = request.params;
 
   const userExist = users.find((user) => user.id === id);
 
-  if (!userExist) {
-    return response.status(404).json({error: "Not Found"});
-  };
-  
+  if(!userExist){
+      return response.status(400).json({error: "User not found"});
+  }
 
   request.user = userExist;
 
@@ -91,6 +86,10 @@ app.post('/users', (request, response) => {
   users.push(user);
 
   return response.status(201).json(user);
+});
+
+app.get('/users', (request, response) => {
+   return response.json(users);
 });
 
 app.get('/users/:id', findUserById, (request, response) => {
@@ -158,13 +157,12 @@ app.delete('/todos/:id', checksExistsUserAccount, checksTodoExists, (request, re
   const todoIndex = user.todos.indexOf(todo);
 
   if (todoIndex === -1) {
-    return response.status(404).json({ error: "Not Found"});
+    return response.status(404).json({ error: 'Todo not found' });
   }
 
   user.todos.splice(todoIndex, 1);
 
-  return response.status(204).send("No Content");
-  
+  return response.status(204).send();
 });
 
 module.exports = {
